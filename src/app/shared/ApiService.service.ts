@@ -16,6 +16,8 @@ export class ApiService {
 //private baseUrl = "https://proxy-server.cfapps.eu10-004.hana.ondemand.com/api"
 private baseUrl = '/backend-dest'
 
+ //private baseUrl = 'https://thingproxy.freeboard.io/fetch/https://btpsddev.cfapps.eu10-004.hana.ondemand.com'
+
   constructor(private http: HttpClient) { }
 
   get<T>(url: string, queryParam?: string, headers?: HttpHeaders): Observable<T> {

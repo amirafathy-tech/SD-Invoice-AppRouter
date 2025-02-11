@@ -16,6 +16,7 @@ import { Router } from '@angular/router';
 })
 export class ServiceInvoiceComponent {
   //cloud data:
+  stopEditing: string="";
   documentNumber!: number;
   itemNumber!: number;
   customerId!: number;
@@ -113,6 +114,13 @@ export class ServiceInvoiceComponent {
   /* End Document Invoices */
 
   ngOnInit() {
+    this._ApiService.get<any>(`debitmemorequestitemcloud/${this.documentNumber}/${this.itemNumber}`).subscribe(response => {
+      console.log(response.d);
+      console.log(response.d.OrderRelatedBillingStatus);
+      this.stopEditing=response.d.OrderRelatedBillingStatus;
+      console.log(this.stopEditing);
+    });
+
     console.log(this.selectedServiceInvoice);
     if (this.savedInMemory) {
      // this.serviceInvoiceRecords = [...this._ServiceInvoiceService.getMainItems()];
@@ -459,30 +467,30 @@ export class ServiceInvoiceComponent {
               life: 3000
             });
             // update execution orders after saving the doc:
-            const updatedOrders = this.serviceInvoiceRecords.map((item) => ({
-              // executionOrderMain: item.executionOrderMain, // as an object 
-              executionOrderMainCode: item.executionOrderMainCode, // code
-              actualQuantity: item.actualQuantity,
-              actualPercentage: item.actualPercentage,
-              remainingQuantity: item.remainingQuantity,
-            }));
-            updatedOrders.forEach((record) => {
-              const filteredRecord = {
-                actualQuantity: record.actualQuantity,
-                actualPercentage: record.actualPercentage,
-                remainingQuantity: record.remainingQuantity,
-              };
-              this._ApiService.patch<MainItemExecutionOrder>('executionordermain', record.executionOrderMainCode, filteredRecord).subscribe({
-                next: (res) => {
-                  console.log('executionordermain updated:', res);
-                },
-                error: (err) => {
-                  console.error(err);
-                },
-                complete: () => {
-                }
-              })
-            })
+            // const updatedOrders = this.serviceInvoiceRecords.map((item) => ({
+            //   // executionOrderMain: item.executionOrderMain, // as an object 
+            //   executionOrderMainCode: item.executionOrderMainCode, // code
+            //   actualQuantity: item.actualQuantity,
+            //   actualPercentage: item.actualPercentage,
+            //   remainingQuantity: item.remainingQuantity,
+            // }));
+            // updatedOrders.forEach((record) => {
+            //   const filteredRecord = {
+            //     actualQuantity: record.actualQuantity,
+            //     actualPercentage: record.actualPercentage,
+            //     remainingQuantity: record.remainingQuantity,
+            //   };
+            //   this._ApiService.patch<MainItemExecutionOrder>('executionordermain', record.executionOrderMainCode, filteredRecord).subscribe({
+            //     next: (res) => {
+            //       console.log('executionordermain updated:', res);
+            //     },
+            //     error: (err) => {
+            //       console.error(err);
+            //     },
+            //     complete: () => {
+            //     }
+            //   })
+            // })
             //end update execution orders after saving the doc:
           }, error: (err) => {
             console.error('Error saving main items:', err);
