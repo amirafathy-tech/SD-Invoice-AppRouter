@@ -21,6 +21,7 @@ export class MainItemServiceInvoice {
     lineTypeCode?: string;
 
     remainingQuantity?: number;
+    currentPercentage?: number;
 
     quantity: number = 0;
 

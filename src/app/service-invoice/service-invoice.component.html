@@ -6,14 +6,14 @@
         </div>
         <div class="p-toolbar-group-end">
             <!-- <button pButton pRipple icon="pi pi-copy" (click)="copyRecord()" class="p-button-rounded m-2"></button> -->
-            <button pButton size="small" (click)="saveDocument()" severity="danger"
+            <button *ngIf="stopEditing !== 'C'" pButton size="small" (click)="saveDocument()" severity="danger"
             class="m-2">Save Document</button>
             <!-- <button pButton size="small" icon="pi pi-trash" (click)="deleteRecord()" severity="danger"
                 class="m-2"></button> -->
             <button pButton icon="pi pi-print" size="small" class="m-2 "></button>
-            <button pButton label="Export" size="small" (click)="exportExcel()" icon="pi pi-download"
+            <button  pButton label="Export" size="small" (click)="exportExcel()" icon="pi pi-download"
                 class="m-2"></button>
-            <button pButton label="Execution-Order" size="small" (click)="showExecutionOrderDialog()"
+            <button *ngIf="stopEditing !== 'C'" pButton label="Execution-Order" size="small" (click)="showExecutionOrderDialog()"
                 class="m-2"></button>
         </div>
     </p-toolbar>
@@ -49,7 +49,7 @@
                     </fd-input-group>
                 </div>
             </div>
-            <div>
+            <div *ngIf="stopEditing !== 'C'">
                 <button pButton size="small" icon="pi pi-trash" (click)="deleteRecord()" severity="danger"
                     class="m-2"></button>
             </div>
@@ -73,13 +73,15 @@
             <th style="min-width: 10rem;">UOM</th>
             <th style="min-width: 10rem;">AmountPerUnit</th>
             <th style="min-width: 10rem;">Currency</th>
-            <th style="min-width: 10rem;">Total</th>
+            <th style="min-width: 10rem;">Current Amount</th>
 
             <th style="min-width: 10rem;">Total Quantity</th>
-            <th style="min-width: 10rem;"> Quantity </th>
+            <th style="min-width: 10rem;"> Current Quantity </th>
+            <!-- new field -->
+            <th style="min-width: 10rem;"> Current Percentage </th>  
             <th style="min-width: 10rem;"> Remaining Quantity </th>
-            <th style="min-width: 10rem;">Actual Quantity</th>
-            <th style="min-width: 10rem;">Actual Percentage %</th>
+            <th style="min-width: 10rem;">Actual Total Quantity</th>
+            <th style="min-width: 10rem;">Actual Total Percentage %</th>
 
             <th style="min-width: 10rem;"> MaterialGrp</th>
             <th style="min-width: 10rem;"> ServiceType</th>
@@ -209,6 +211,19 @@
                     </ng-template>
                     <ng-template pTemplate="output">
                         {{ mainItem.quantity }}
+                    </ng-template>
+                </p-cellEditor>
+            </td>
+            <td style="min-width: 10rem;">
+                <!--  Current Pecentage-->
+                <p-cellEditor>
+                    <ng-template pTemplate="input">
+                        {{mainItem.currentPercentage}}
+                        <!-- <input pInputNumber class="rounded-input" name="currentPercentage" type="number" [min]="0"
+                            [(ngModel)]="mainItem.currentPercentage"> -->
+                    </ng-template>
+                    <ng-template pTemplate="output">
+                        {{ mainItem.currentPercentage }}
                     </ng-template>
                 </p-cellEditor>
             </td>
@@ -378,7 +393,7 @@
     </ng-template>
 
 
-    <ng-template pTemplate="footer" class="m-3">
+    <ng-template *ngIf="stopEditing !== 'C'" pTemplate="footer" class="m-3">
         <ng-container *ngIf="selectedExecutionOrders">
             <tr *ngFor="let mainItem of selectedExecutionOrders">
                 <td style="min-width: 10rem;">
@@ -425,6 +440,9 @@
                 <td style="min-width: 10rem;">
                     <input pInputNumber class="rounded-input" name="serviceQuantity" type="number" [min]="0"
                     (keyup.enter)="saveMainItem(mainItem)" [(ngModel)]="mainItem.serviceQuantity">
+                </td>
+                <td style="min-width: 10rem;">
+                    <input pInputNumber class="rounded-input" disabled name="currentPercentage" type="number" [min]="0">
                 </td>
                 <td style="min-width: 10rem;">
                     <input pInputNumber class="rounded-input" disabled name="remainingQuantity" type="number" [min]="0">
@@ -483,7 +501,7 @@
             </tr>
         </ng-container>
 
-        <tr>
+        <tr *ngIf="stopEditing !== 'C'">
             <td style="min-width: 10rem;">
             </td>
             <td style="min-width: 10rem;">
@@ -538,6 +556,13 @@
                 <ng-container *ngIf="executionOrderWithlineNumber">
                     <input pInputNumber name="serviceQuantity" type="number" [min]="0"
                     (keyup.enter)="addMainItemInMemory()"   [(ngModel)]="executionOrderWithlineNumber.serviceQuantity" class="rounded-input">
+                </ng-container>
+            </td>
+            <!-- currentPercentage -->
+            <td style="min-width: 10rem;">
+                <ng-container *ngIf="executionOrderWithlineNumber">
+                    <input pInputNumber class="rounded-input" disabled name="currentPercentage" type="number" [min]="0"
+                        >
                 </ng-container>
             </td>
             <!-- Remaining  Quantity will be changed -->
@@ -642,10 +667,7 @@
 <p-dialog header="Select Rows to Copy:" class="header-color" [(visible)]="displayExecutionOrderDialog" [modal]="true"
     [style]="{width: '70vw'}" [responsive]="true">
  
-    <!-- <div class="flex align-items-center justify-content-between">
-    <button pButton type="button" label="Enter Document Number" (click)="openDocumentDialog()" style="margin-bottom: 10px;" class="rounded-input"></button>
-    <button  pButton type="button" icon="pi pi-refresh"  (click)="getExecutionOrders()" style="margin-bottom: 10px;"  class="rounded-input"></button>
-    </div> -->
+  
     <p-table [value]="executionOrders" selectionMode="multiple" [(selection)]="selectedExecutionOrders"
         dataKey="executionOrderMainCode">
 
@@ -699,21 +721,5 @@
             class="p-button-secondary"></button>
     </p-footer>
 </p-dialog>
-
-<!-- Nested Dialog for Document Number Input -->
-<!-- <p-dialog header="Enter Document Number" [(visible)]="displayExecutionDocumentDialog" [modal]="true" [style]="{width: '30vw'}" [responsive]="true">
-    <div class="flex align-items-center justify-content-between">
-    <div class="p-field">
-        <label for="executionDocumentNumber">Document Number:</label>
-        <input id="executionDocumentNumber" type="number" pInputNumber min="0" [(ngModel)]="executionDocumentNumber" class="rounded-input" />
-    </div>
-    
-    </div>
-    <p-footer>
-        <button pButton type="button" (click)="getExecutionOrdersByDocument()" style="border-radius: 8px; margin-right: 3px;" label="Fetch"></button>
-        <button pButton type="button" (click)="displayExecutionDocumentDialog = false" style="border-radius: 8px;" label="Cancel" class="p-button-secondary"></button>
-    </p-footer>
-</p-dialog> -->
-
 
 <p-confirmDialog [style]="{ width: '450px' }"></p-confirmDialog>

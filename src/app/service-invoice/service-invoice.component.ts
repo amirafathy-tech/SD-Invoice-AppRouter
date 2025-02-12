@@ -434,6 +434,8 @@ export class ServiceInvoiceComponent {
           personnelNumberCode: item.personnelNumberCode,
           lineTypeCode: item.lineTypeCode,
           totalQuantity: item.totalQuantity,
+          
+          currentPercentage:item.currentPercentage, // new field
 
           // quantities:
           actualQuantity: item.actualQuantity,
