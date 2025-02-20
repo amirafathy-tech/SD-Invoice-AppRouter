@@ -5,16 +5,20 @@
             <h5>{{itemText}}</h5>
         </div>
         <div class="p-toolbar-group-end">
-            <!-- <button pButton pRipple icon="pi pi-copy" (click)="copyRecord()" class="p-button-rounded m-2"></button> -->
-            <button *ngIf="stopEditing !== 'C'" pButton size="small" (click)="saveDocument()" severity="danger"
+            <p-button *ngIf="stopEditing !== 'C'"  [outlined]="true" label="Save Document" size="small" icon="pi pi-save" (click)="saveDocument()"
+            class="m-2"></p-button>
+        <p-button [outlined]="true" label="Print" size="small" icon="pi pi-print" class="m-2"></p-button>
+        <p-button [outlined]="true" label="Export" size="small" icon="pi pi-download" (click)="exportExcel()"
+            class="m-2"></p-button>
+        <p-button *ngIf="stopEditing !== 'C'"  [outlined]="true" label="Execution-Order" size="small" icon="pi pi-external-link"
+            (click)="showExecutionOrderDialog()" class="m-2"></p-button>
+            <!-- <button *ngIf="stopEditing !== 'C'" pButton size="small" (click)="saveDocument()" severity="danger"
             class="m-2">Save Document</button>
-            <!-- <button pButton size="small" icon="pi pi-trash" (click)="deleteRecord()" severity="danger"
-                class="m-2"></button> -->
             <button pButton icon="pi pi-print" size="small" class="m-2 "></button>
             <button  pButton label="Export" size="small" (click)="exportExcel()" icon="pi pi-download"
                 class="m-2"></button>
             <button *ngIf="stopEditing !== 'C'" pButton label="Execution-Order" size="small" (click)="showExecutionOrderDialog()"
-                class="m-2"></button>
+                class="m-2"></button> -->
         </div>
     </p-toolbar>
 
@@ -50,8 +54,9 @@
                 </div>
             </div>
             <div *ngIf="stopEditing !== 'C'">
-                <button pButton size="small" icon="pi pi-trash" (click)="deleteRecord()" severity="danger"
-                    class="m-2"></button>
+                <!-- <button pButton size="small" icon="pi pi-trash" (click)="deleteRecord()" severity="danger"
+                    class="m-2"></button> -->
+                    <p-button   [outlined]="true"  size="small" icon="pi pi-trash" (click)="deleteRecord()" class="m-2"></p-button>
             </div>
         </div>
     </ng-template>
@@ -490,12 +495,15 @@
                 </td>
                 <td style="min-width: 10rem;">
                     <div class="flex align-items-center justify-content-center gap-2">
-                        <button pButton type="button" icon="pi pi-plus" class="ui-button-info" label="Add"
+                        
+          <p-button   [outlined]="true" icon="pi pi-plus" label="Add" size="small" (click)="saveMainItem(mainItem)" class="m-2"></p-button>
+          <p-button   [outlined]="true" icon="pi pi-times" severity="danger" label="Cancel" size="small" (click)="cancelMainItemExecutionOrder(mainItem)" ></p-button>
+                        <!-- <button pButton type="button" icon="pi pi-plus" class="ui-button-info" label="Add"
                         style=" border-radius: 8px; " (click)="saveMainItem(mainItem)">
                         </button>
                         <button pButton type="button" icon="pi pi-times" class="p-button-danger" label="Cancel"
                         style=" border-radius: 8px; " (click)="cancelMainItemExecutionOrder(mainItem)">
-                        </button>
+                        </button> -->
                     </div>
                 </td>
             </tr>
@@ -653,9 +661,11 @@
                 </ng-container>
             </td>
             <td style="min-width: 10rem;">
-                <button pButton type="button" icon="pi pi-plus" class="ui-button-info" label="Add"
+                
+          <p-button   [outlined]="true" icon="pi pi-plus" label="Add MainItem" size="small" (click)="addMainItemInMemory()" class="m-2"></p-button>
+                <!-- <button pButton type="button" icon="pi pi-plus" class="ui-button-info" label="Add"
                 style=" border-radius: 8px; " (click)="addMainItemInMemory()">
-                </button>
+                </button> -->
             </td>
         </tr>
 
@@ -716,9 +726,11 @@
         </ng-template>
     </p-table>
     <p-footer>
-        <button pButton type="button" (click)="saveSelection()" style=" border-radius: 8px; margin-right: 3px;  " label="Copy"></button>
+        <p-button   [outlined]="true"  label="Copy" size="small" (click)="saveSelection()" class="m-2"></p-button>
+        <p-button   [outlined]="true" severity="danger" label="Cancel" size="small" (click)="displayExecutionOrderDialog = false" class="m-2"></p-button>
+        <!-- <button pButton type="button" (click)="saveSelection()" style=" border-radius: 8px; margin-right: 3px;  " label="Copy"></button>
         <button pButton type="button" (click)="displayExecutionOrderDialog = false" style=" border-radius: 8px; " label="Cancel"
-            class="p-button-secondary"></button>
+            class="p-button-secondary"></button> -->
     </p-footer>
 </p-dialog>
 
