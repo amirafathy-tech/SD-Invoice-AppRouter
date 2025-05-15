@@ -22,12 +22,8 @@ export class ServiceInvoiceComponent {
   customerId!: number;
   itemText: string = "";
   cloudCurrency!: string;
-
-  //displayExecutionDocumentDialog = false;
-  // executionDocumentNumber: string = '';
-
+////////////////
   savedInMemory: boolean = false;
-
   public rowIndex = 0;
   executionOrders: MainItemExecutionOrder[] = [];
   serviceInvoiceRecords: MainItemServiceInvoice[] = [];
@@ -51,11 +47,49 @@ export class ServiceInvoiceComponent {
     this.cloudCurrency = this.router.getCurrentNavigation()?.extras.state?.['currency'];
     console.log(this.documentNumber, this.itemNumber, this.customerId, this.cloudCurrency);
   }
+  ngOnInit() {
+    this._ApiService.get<any>(`debitmemorequestitemcloud/${this.documentNumber}/${this.itemNumber}`).subscribe(response => {
+      console.log(response.d);
+      console.log(response.d.OrderRelatedBillingStatus);
+      this.stopEditing=response.d.OrderRelatedBillingStatus;
+      console.log(this.stopEditing);
+    });
+
+    console.log(this.selectedServiceInvoice);
+    if (this.savedInMemory) {
+     this.serviceInvoiceRecords = [...this.serviceInvoiceRecords];
+      console.log(this.serviceInvoiceRecords);
+    }
+    this._ApiService.get<MainItemServiceInvoice[]>(`serviceinvoice/referenceid?referenceId=${this.documentNumber}&debitMemoRequestItem=${this.itemNumber}`).subscribe({
+      next: (res) => {
+        console.log(res);
+        this.serviceInvoiceRecords = res.map((item, index) => ({ ...item, originalIndex: index + 1 }))
+        .sort((a, b) => a.serviceInvoiceCode - b.serviceInvoiceCode);
+        this.itemText = this.serviceInvoiceRecords[0].debitMemoRequestItemText ? this.serviceInvoiceRecords[0].debitMemoRequestItemText : "";
+        console.log(this.itemText);
+        console.log(this.serviceInvoiceRecords);
+        this.loading = false;
+        const filteredRecords = this.serviceInvoiceRecords.filter(record => record.lineTypeCode != "Contingency line");
+        this.totalValue = filteredRecords.reduce((sum, record) => sum + record.total, 0);
+        console.log('Total Value:', this.totalValue);
+      }, error: (err) => {
+        console.log(err);
+        console.log(err.status);
+        if (err.status == 404) {
+          this.serviceInvoiceRecords = [];
+          this.loading = false;
+          this.totalValue = this.serviceInvoiceRecords.reduce((sum, record) => sum + record.total, 0);
+          console.log('Total Value:', this.totalValue);
+        }
+      },
+      complete: () => {
+      }
+    });
+  }
   /* Calculate Header Total Value */
   calculateTotalValue(): void {
     this.totalValue = this.serviceInvoiceRecords.reduce((sum, item) => sum + (item.total || 0), 0);
   }
-
   updateTotalValueAfterAction(): void {
     this.calculateTotalValue();
     console.log('Updated Total Value:', this.totalValue);
@@ -112,52 +146,6 @@ export class ServiceInvoiceComponent {
     });
   }
   /* End Document Invoices */
-
-  ngOnInit() {
-    this._ApiService.get<any>(`debitmemorequestitemcloud/${this.documentNumber}/${this.itemNumber}`).subscribe(response => {
-      console.log(response.d);
-      console.log(response.d.OrderRelatedBillingStatus);
-      this.stopEditing=response.d.OrderRelatedBillingStatus;
-      console.log(this.stopEditing);
-    });
-
-    console.log(this.selectedServiceInvoice);
-    if (this.savedInMemory) {
-     // this.serviceInvoiceRecords = [...this._ServiceInvoiceService.getMainItems()];
-     this.serviceInvoiceRecords = [...this.serviceInvoiceRecords];
-      console.log(this.serviceInvoiceRecords);
-    }
-    //localhost:8080/serviceinvoice/referenceid?referenceId=70000009&debitMemoRequestItem=10
-    this._ApiService.get<MainItemServiceInvoice[]>(`serviceinvoice/referenceid?referenceId=${this.documentNumber}&debitMemoRequestItem=${this.itemNumber}`).subscribe({
-      next: (res) => {
-        console.log(res);
-        this.serviceInvoiceRecords = res.map((item, index) => ({ ...item, originalIndex: index + 1 }))
-        .sort((a, b) => a.serviceInvoiceCode - b.serviceInvoiceCode);
-        this.itemText = this.serviceInvoiceRecords[0].debitMemoRequestItemText ? this.serviceInvoiceRecords[0].debitMemoRequestItemText : "";
-        console.log(this.itemText);
-        console.log(this.serviceInvoiceRecords);
-        this.loading = false;
-        const filteredRecords = this.serviceInvoiceRecords.filter(record => record.lineTypeCode != "Contingency line");
-        this.totalValue = filteredRecords.reduce((sum, record) => sum + record.total, 0);
-        console.log('Total Value:', this.totalValue);
-      }, error: (err) => {
-        console.log(err);
-        console.log(err.status);
-        if (err.status == 404) {
-          this.serviceInvoiceRecords = [];
-          this.loading = false;
-          this.totalValue = this.serviceInvoiceRecords.reduce((sum, record) => sum + record.total, 0);
-          console.log('Total Value:', this.totalValue);
-        }
-      },
-      complete: () => {
-      }
-    });
-    // this._ApiService.get<MainItemExecutionOrder[]>('executionordermain/all').subscribe(response => {
-    //   this.executionOrders = response.sort((a, b) => a.executionOrderMainCode - b.executionOrderMainCode);
-    //   console.log(this.executionOrders);
-    // });
-  }
 
   // For Edit  ServiceInvoice MainItem:
   clonedMainItem: { [s: number]: MainItemServiceInvoice } = {};
@@ -433,8 +421,6 @@ export class ServiceInvoiceComponent {
           serviceTypeCode: item.serviceTypeCode,
           personnelNumberCode: item.personnelNumberCode,
           lineTypeCode: item.lineTypeCode,
-          
-
           // quantities:
           totalQuantity: item.totalQuantity,
           // quantity: item.quantity,
@@ -622,9 +608,7 @@ export class ServiceInvoiceComponent {
       }
     }
   }
-  cancelMainItemExecutionOrder(item: any): void {
-    this.selectedExecutionOrders = this.selectedExecutionOrders.filter(i => i !== item);
-  }
+ 
   // for selected execution orders from the dialog:
   saveMainItem(mainItem: MainItemExecutionOrder) {
     console.log(mainItem);
@@ -735,6 +719,9 @@ export class ServiceInvoiceComponent {
         }
       });
     }
+  }
+  cancelMainItemExecutionOrder(item: any): void {
+    this.selectedExecutionOrders = this.selectedExecutionOrders.filter(i => i !== item);
   }
 
   //Export  to Excel Sheet
@@ -901,48 +888,7 @@ export class ServiceInvoiceComponent {
       //debitMemoRequestItemText:"",
     }
   }
-  // openDocumentDialog() {
-  //   this.displayExecutionDocumentDialog = true;
-  // }
-
-
-  // getExecutionOrdersByDocument() {
-  //   if (this.executionDocumentNumber) {
-  //     this.displayExecutionDocumentDialog = false;
-
-  //     // Fetch data based on document number and update the table
-  //     this._ApiService.get<MainItemExecutionOrder[]>(`executionordermain/referenceid?referenceId=${this.executionDocumentNumber}`).subscribe({
-  //       next: (res) => {
-  //         this.executionOrders = res.sort((a, b) => a.executionOrderMainCode - b.executionOrderMainCode);
-  //         console.log(this.executionOrders);
-  //         // this.ngOnInit()
-  //       }, error: (err) => {
-  //         console.log(err);
-  //         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Invalid Data' });
-  //       },
-  //       complete: () => {
-  //       }
-  //     });
-  //   } else {
-  //     console.warn('Please enter a valid document number');
-  //   }
-  // }
-
-  // getExecutionOrders() {
-  //   this._ApiService.get<MainItemExecutionOrder[]>(`executionordermain/all`).subscribe({
-  //     next: (res) => {
-  //       this.executionOrders = res.sort((a, b) => a.executionOrderMainCode - b.executionOrderMainCode);
-  //       console.log(this.executionOrders);
-  //     }, error: (err) => {
-  //       console.log(err);
-  //       this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Invalid Data' });
-  //     },
-  //     complete: () => {
-  //     }
-  //   });
-
-  // }
-
+ 
   // Memory operation:
   addMainItem(item: MainItemServiceInvoice) {
     item.serviceInvoiceCode = this.serviceInvoiceRecords.length + 1;
