@@ -187,9 +187,11 @@ export class ServiceInvoiceComponent {
             quantity: filteredRecord['quantity'],
             totalQuantity: filteredRecord['totalQuantity'],
             amountPerUnit: filteredRecord['amountPerUnit'],
-            // executionOrderMainCode: filteredRecord['executionOrderMainCode'],
+            executionOrderMainCode: filteredRecord['executionOrderMainCode'],
             // unlimitedOverFulfillment:filteredRecord['unlimitedOverFulfillment']?filteredRecord['unlimitedOverFulfillment']:false
           };
+          console.log(bodyRequest);
+          
 
           this._ApiService.post<any>(`/calculatequantities`, bodyRequest).subscribe({
             next: (res) => {
@@ -326,9 +328,11 @@ export class ServiceInvoiceComponent {
         quantity: filteredRecord['quantity'],
         totalQuantity: filteredRecord['totalQuantity'],
         amountPerUnit: filteredRecord['amountPerUnit'],
-        // executionOrderMainCode: filteredRecord['executionOrderMainCode'],
+       executionOrderMainCode: filteredRecord['executionOrderMainCode'],
         // unlimitedOverFulfillment:filteredRecord['unlimitedOverFulfillment']?filteredRecord['unlimitedOverFulfillment']:false
       };
+      console.log(bodyRequest);
+      
 
       this._ApiService.post<any>(`/calculatequantities`, bodyRequest).subscribe({
         next: (res) => {
