@@ -16,13 +16,13 @@ import { Router } from '@angular/router';
 })
 export class ServiceInvoiceComponent {
   //cloud data:
-  stopEditing: string="";
+  stopEditing: string = "";
   documentNumber!: number;
   itemNumber!: number;
   customerId!: number;
   itemText: string = "";
   cloudCurrency!: string;
-////////////////
+  ////////////////
   savedInMemory: boolean = false;
   public rowIndex = 0;
   executionOrders: MainItemExecutionOrder[] = [];
@@ -40,6 +40,10 @@ export class ServiceInvoiceComponent {
   totalValue: number = 0.0
   loading: boolean = true;
 
+  // to detect unsaved edits
+  editingRows: Set<number> = new Set(); // rowIndex values of rows being edited
+
+
   constructor(private cdr: ChangeDetectorRef, private router: Router, private _ApiService: ApiService, private _ServiceInvoiceService: ServiceInvoiceService, private messageService: MessageService, private confirmationService: ConfirmationService) {
     this.documentNumber = this.router.getCurrentNavigation()?.extras.state?.['documentNumber'];
     this.itemNumber = this.router.getCurrentNavigation()?.extras.state?.['itemNumber'];
@@ -51,20 +55,20 @@ export class ServiceInvoiceComponent {
     this._ApiService.get<any>(`debitmemorequestitemcloud/${this.documentNumber}/${this.itemNumber}`).subscribe(response => {
       console.log(response.d);
       console.log(response.d.OrderRelatedBillingStatus);
-      this.stopEditing=response.d.OrderRelatedBillingStatus;
+      this.stopEditing = response.d.OrderRelatedBillingStatus;
       console.log(this.stopEditing);
     });
 
     console.log(this.selectedServiceInvoice);
     if (this.savedInMemory) {
-     this.serviceInvoiceRecords = [...this.serviceInvoiceRecords];
+      this.serviceInvoiceRecords = [...this.serviceInvoiceRecords];
       console.log(this.serviceInvoiceRecords);
     }
     this._ApiService.get<MainItemServiceInvoice[]>(`serviceinvoice/referenceid?referenceId=${this.documentNumber}&debitMemoRequestItem=${this.itemNumber}`).subscribe({
       next: (res) => {
         console.log(res);
         this.serviceInvoiceRecords = res.map((item, index) => ({ ...item, originalIndex: index + 1 }))
-        .sort((a, b) => a.serviceInvoiceCode - b.serviceInvoiceCode);
+          .sort((a, b) => a.serviceInvoiceCode - b.serviceInvoiceCode);
         this.itemText = this.serviceInvoiceRecords[0].debitMemoRequestItemText ? this.serviceInvoiceRecords[0].debitMemoRequestItemText : "";
         console.log(this.itemText);
         console.log(this.serviceInvoiceRecords);
@@ -149,10 +153,11 @@ export class ServiceInvoiceComponent {
 
   // For Edit  ServiceInvoice MainItem:
   clonedMainItem: { [s: number]: MainItemServiceInvoice } = {};
-  onMainItemEditInit(record: MainItemServiceInvoice) {
+  onMainItemEditInit(record: MainItemServiceInvoice, ri: number) {
     this.clonedMainItem[record.serviceInvoiceCode] = { ...record };
+    this.editingRows.add(ri);
   }
-  onMainItemEditSave(index: number, record: MainItemServiceInvoice) {
+  onMainItemEditSave(index: number, record: MainItemServiceInvoice, ri: number) {
     let executionOrderMainCode: number = 0;
     let executionOrderMain: any
     console.log(record);
@@ -191,7 +196,7 @@ export class ServiceInvoiceComponent {
             // unlimitedOverFulfillment:filteredRecord['unlimitedOverFulfillment']?filteredRecord['unlimitedOverFulfillment']:false
           };
           console.log(bodyRequest);
-          
+
 
           this._ApiService.post<any>(`/calculatequantities`, bodyRequest).subscribe({
             next: (res) => {
@@ -328,11 +333,11 @@ export class ServiceInvoiceComponent {
         quantity: filteredRecord['quantity'],
         totalQuantity: filteredRecord['totalQuantity'],
         amountPerUnit: filteredRecord['amountPerUnit'],
-       executionOrderMainCode: filteredRecord['executionOrderMainCode'],
+        executionOrderMainCode: filteredRecord['executionOrderMainCode'],
         // unlimitedOverFulfillment:filteredRecord['unlimitedOverFulfillment']?filteredRecord['unlimitedOverFulfillment']:false
       };
       console.log(bodyRequest);
-      
+
 
       this._ApiService.post<any>(`/calculatequantities`, bodyRequest).subscribe({
         next: (res) => {
@@ -368,11 +373,14 @@ export class ServiceInvoiceComponent {
         }
       });
     }
+
+    this.editingRows.delete(ri);
     //}
   }
   onMainItemEditCancel(row: MainItemServiceInvoice, index: number) {
     this.serviceInvoiceRecords[index] = this.clonedMainItem[row.serviceInvoiceCode]
     delete this.clonedMainItem[row.serviceInvoiceCode]
+    this.editingRows.delete(index);
   }
   // Delete ServiceInvoice MainItem 
   deleteRecord() {
@@ -386,11 +394,11 @@ export class ServiceInvoiceComponent {
           for (const record of this.selectedServiceInvoice) {
             console.log(record);
             this.serviceInvoiceRecords = this.serviceInvoiceRecords.filter(item => item.serviceInvoiceCode !== record.serviceInvoiceCode);
-              // Reassign originalIndex dynamically
-              this.serviceInvoiceRecords.forEach((item, index) => {
-                item.originalIndex = index + 1; 
-              });
-              this.serviceInvoiceRecords = [...this.serviceInvoiceRecords];
+            // Reassign originalIndex dynamically
+            this.serviceInvoiceRecords.forEach((item, index) => {
+              item.originalIndex = index + 1;
+            });
+            this.serviceInvoiceRecords = [...this.serviceInvoiceRecords];
             this.updateTotalValueAfterAction();
             //this.cdr.detectChanges();
             console.log(this.serviceInvoiceRecords);
@@ -403,6 +411,15 @@ export class ServiceInvoiceComponent {
   }
   // saving the doc after all changes
   saveDocument() {
+
+    if (this.editingRows.size > 0) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Please save the edited line first'
+      });
+      return;
+    }
     // if (this.selectedMainItems.length) {
     this.confirmationService.confirm({
       message: 'Are you sure you want to save the document?',
@@ -414,7 +431,7 @@ export class ServiceInvoiceComponent {
           executionOrderMainCode: item.executionOrderMainCode, // code
 
           refrenceId: this.documentNumber,
-         
+
           amountPerUnit: item.amountPerUnit,
           total: item.total,
           serviceNumberCode: item.serviceNumberCode,
@@ -534,7 +551,7 @@ export class ServiceInvoiceComponent {
         // actualQuantity: this.newMainItem.actualQuantity,
         // actualPercentage: this.newMainItem.actualPercentage,
         overFulfillmentPercentage: this.executionOrderWithlineNumber.overFulfillmentPercentage,
-        unlimitedOverFulfillment: this.executionOrderWithlineNumber.unlimitedOverFulfillment?  this.executionOrderWithlineNumber.unlimitedOverFulfillment : false,
+        unlimitedOverFulfillment: this.executionOrderWithlineNumber.unlimitedOverFulfillment ? this.executionOrderWithlineNumber.unlimitedOverFulfillment : false,
         manualPriceEntryAllowed: this.executionOrderWithlineNumber.manualPriceEntryAllowed,
         externalServiceNumber: this.executionOrderWithlineNumber.externalServiceNumber,
         serviceText: this.executionOrderWithlineNumber.serviceText,
@@ -568,7 +585,7 @@ export class ServiceInvoiceComponent {
           totalQuantity: newRecord.totalQuantity,
           amountPerUnit: newRecord.amountPerUnit,
           executionOrderMainCode: newRecord.executionOrderMainCode,
-          overFulfillmentPercentage:newRecord.overFulfillmentPercentage,
+          overFulfillmentPercentage: newRecord.overFulfillmentPercentage,
           unlimitedOverFulfillment: newRecord.unlimitedOverFulfillment ? newRecord.unlimitedOverFulfillment : false
         };
 
@@ -588,9 +605,9 @@ export class ServiceInvoiceComponent {
             ) as MainItemServiceInvoice;
             console.log(filteredRecord);
             ///.................
-           // this._ServiceInvoiceService.addMainItem(filteredRecord);
-           this.addMainItem(filteredRecord);
-           this.serviceInvoiceRecords = [...this.serviceInvoiceRecords];
+            // this._ServiceInvoiceService.addMainItem(filteredRecord);
+            this.addMainItem(filteredRecord);
+            this.serviceInvoiceRecords = [...this.serviceInvoiceRecords];
             this.savedInMemory = true;
             // this.cdr.detectChanges();
             // const newMainItems = this._ServiceInvoiceService.getMainItems();
@@ -612,7 +629,7 @@ export class ServiceInvoiceComponent {
       }
     }
   }
- 
+
   // for selected execution orders from the dialog:
   saveMainItem(mainItem: MainItemExecutionOrder) {
     console.log(mainItem);
@@ -644,7 +661,7 @@ export class ServiceInvoiceComponent {
       // actualQuantity: (mainItem.actualQuantity ?? 0) + (mainItem.serviceQuantity ?? 0),
       // actualPercentage: this.newMainItem.actualPercentage,
       overFulfillmentPercentage: mainItem.overFulfillmentPercentage,
-      unlimitedOverFulfillment: mainItem.unlimitedOverFulfillment? mainItem.unlimitedOverFulfillment : false,
+      unlimitedOverFulfillment: mainItem.unlimitedOverFulfillment ? mainItem.unlimitedOverFulfillment : false,
       manualPriceEntryAllowed: mainItem.manualPriceEntryAllowed,
       externalServiceNumber: mainItem.externalServiceNumber,
       serviceText: mainItem.serviceText,
@@ -683,7 +700,7 @@ export class ServiceInvoiceComponent {
         totalQuantity: newRecord.totalQuantity,
         amountPerUnit: newRecord.amountPerUnit,
         executionOrderMainCode: newRecord.executionOrderMainCode,
-        overFulfillmentPercentage:newRecord.overFulfillmentPercentage,
+        overFulfillmentPercentage: newRecord.overFulfillmentPercentage,
         unlimitedOverFulfillment: newRecord.unlimitedOverFulfillment ? newRecord.unlimitedOverFulfillment : false
       };
       this._ApiService.post<any>(`/quantities`, bodyRequest).subscribe({
@@ -892,7 +909,7 @@ export class ServiceInvoiceComponent {
       //debitMemoRequestItemText:"",
     }
   }
- 
+
   // Memory operation:
   addMainItem(item: MainItemServiceInvoice) {
     item.serviceInvoiceCode = this.serviceInvoiceRecords.length + 1;
